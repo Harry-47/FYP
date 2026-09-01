@@ -50,16 +50,16 @@ export class User {
   @Prop({ default: null })
   resetPasswordExpires: Date;
 
-  @Prop({ default: null })
+  @Prop({ type:String, default: null })
   deviceSwitchToken: string | null;
 
-  @Prop({ default: null })
+  @Prop({ type:String, default: null })
   deviceSwitchExpires: Date | null;
 
-  @Prop({ default: null })
+  @Prop({ type:String, default: null })
   pendingDeviceUUID: string | null;
 
-  @Prop({ default: null })
+  @Prop({ type:String, default: null })
    lastDeviceSwitchAt: Date | null;
 }
 

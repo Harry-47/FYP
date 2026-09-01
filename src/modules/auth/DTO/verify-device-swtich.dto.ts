@@ -6,6 +6,6 @@ export class VerifyDeviceSwitchDto {
   token: string;
 
   @IsString()
-  @IsNotEmpty()
-  currentDeviceUUID: string; 
+  @IsNotEmpty({ message: 'Current device UUID is required' })
+  currentDeviceUUID: string;
 }

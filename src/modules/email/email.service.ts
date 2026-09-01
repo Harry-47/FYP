@@ -22,12 +22,11 @@ export class EmailService {
     return { success: true };
   }
 
-  async sendDeviceSwitchMail(to: string, token: string, newDeviceUUID: string) {
+  async sendDeviceSwitchMail(to: string, token: string) {
   const switchUrl = `http://localhost:3000/api/v1/auth/device-switch/verify?token=${token}`;
 
   this.logger.log('==============================================');
   this.logger.log(`[MOCK EMAIL] Device Switch Requested for: ${to}`);
-  this.logger.log(`[MOCK EMAIL] Pending New Device: ${newDeviceUUID}`);
   this.logger.log(`[MOCK EMAIL] Verification Link: ${switchUrl}`);
   this.logger.log('==============================================');
 

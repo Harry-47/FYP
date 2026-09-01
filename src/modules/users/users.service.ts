@@ -54,12 +54,11 @@ async updatePassword(userId: string, hashedPassword: string) {
     resetPasswordExpires: null,
   });
 }
-//to store device switch request token, expiry and new device UUID for verification of device switch request
-async setDeviceSwitchRequest(userId: string, token: string, expires: Date, newDeviceUUID: string) {
+//to store device switch request token, expiry for verification of device switch request
+async setDeviceSwitchRequest(userId: string, token: string, expires: Date) {
   return this.userModel.findByIdAndUpdate(userId, {
     deviceSwitchToken: token,
     deviceSwitchExpires: expires,
-    pendingDeviceUUID: newDeviceUUID,
   });
 }
 
@@ -73,12 +72,10 @@ async findByDeviceSwitchToken(token: string) {
 
 // to finally migrate user's UUID to a new device
 async updateDeviceUUID(userId: string, newDeviceUUID: string) {
-  
   return this.userModel.findByIdAndUpdate(userId, {
     deviceUUID: newDeviceUUID,
     deviceSwitchToken: null,
     deviceSwitchExpires: null,
-    pendingDeviceUUID: null,
     lastDeviceSwitchAt: new Date(),
   });
 }

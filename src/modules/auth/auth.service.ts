@@ -204,21 +204,18 @@ async resetPassword(resetPasswordDto: ResetPassDto) {
     };
   }
 
-  //basically, if the student's mobile device is lost or stolen, they can request a device switch via HOD. The system will send a verification link to their registered email. Once they click the link, the system will update their device UUID in the database, allowing them to log in from the new device, otherwise login would be allowed anyways but different UUID could be flagged as suspicious and be in the honeypot trap of the app all the time.
   async requestDeviceSwitch(dto: RequestDeviceSwitchDto) {
   const user = await this.userService.findByRollnoOrEmail(dto.identifier);
   if (!user) {
-    throw new NotFoundException('User not found');
+    throw new NotFoundException('Student not found');
   }
 
-  // Same device check
-  if (user.deviceUUID === dto.newDeviceUUID) {
-    throw new BadRequestException('This device is already registered with your account');
-  }
+  // 7 Days cool-down check
   const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
   if (user.lastDeviceSwitchAt && (Date.now() - new Date(user.lastDeviceSwitchAt).getTime() < SEVEN_DAYS)) {
-    throw new BadRequestException('Device switch allowed only once per 7 days.');
+    throw new BadRequestException('Device switch allowed only once every 7 days.');
   }
+
   const rawToken = crypto.randomBytes(32).toString('hex');
   const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
   const tokenExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 Mins
@@ -227,37 +224,31 @@ async resetPassword(resetPasswordDto: ResetPassDto) {
     user._id.toString(),
     hashedToken,
     tokenExpiry,
-    dto.newDeviceUUID,
   );
 
-  await this.emailService.sendDeviceSwitchMail(user.email, rawToken, dto.newDeviceUUID);
+  await this.emailService.sendDeviceSwitchMail(user.email, rawToken);
 
   return {
     success: true,
-    message: 'Device switch verification link has been sent to your registered email',
+    message: `Verification link sent to student email: ${user.email}`,
   };
 }
 
-// now, when the user clicks the verification link in their email, the system will verify the token and update the device UUID in the database, allowing them to log in from the new device.
+// 2. Mobile App Triggered Verify
 async verifyDeviceSwitch(dto: VerifyDeviceSwitchDto) {
   const hashedToken = crypto.createHash('sha256').update(dto.token).digest('hex');
   const user = await this.userService.findByDeviceSwitchToken(hashedToken);
 
-  if (!user || !user.pendingDeviceUUID) {
-    throw new BadRequestException('Invalid or expired device switch token');
+  if (!user) {
+    throw new BadRequestException('Invalid or expired device switch link');
   }
 
-  //7 Days cool down period
- const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
-  if (user.lastDeviceSwitchAt && (Date.now() - new Date(user.lastDeviceSwitchAt).getTime() < SEVEN_DAYS)) {
-    throw new BadRequestException('Device switch limit reached (1 switch per 7 days).');
-  }
-
-  await this.userService.updateDeviceUUID(user._id.toString(), user.pendingDeviceUUID);
+  // Naye phone ki UUID direct lock karo
+  await this.userService.updateDeviceUUID(user._id.toString(), dto.currentDeviceUUID);
 
   return {
     success: true,
-    message: 'Device changed successfully. You can now login with your new device.',
+    message: 'New device locked successfully. You can now login.',
   };
 }
 }
