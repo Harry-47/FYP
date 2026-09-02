@@ -4,19 +4,24 @@ import { UsersService } from '../users/users.service';
 import * as bcrypt from "bcrypt"
 import { LoginDto } from './DTO/login.dto';
 import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../email/email.service';
 import * as crypto from 'crypto';
 import { ResetPassDto } from './DTO/reset-pass.dto';
 import { RequestDeviceSwitchDto } from './DTO/request-device-switch.dto';
 import { VerifyDeviceSwitchDto } from './DTO/verify-device-swtich.dto';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Tenant, TenantDocument } from './tenant.schema';
+import { CreateTenantDto } from './DTO/tenant.dto';
+import { UpdatePlanDto } from './DTO/update-plan.dto';
+
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userService:UsersService,
     private readonly jwtService : JwtService,
-    private readonly configService: ConfigService,
+    @InjectModel(Tenant.name) private readonly tenantModel: Model<TenantDocument>,
     private readonly emailService: EmailService
   ){}
 
@@ -234,7 +239,7 @@ async resetPassword(resetPasswordDto: ResetPassDto) {
   };
 }
 
-// 2. Mobile App Triggered Verify
+// Mobile App Triggered Verify
 async verifyDeviceSwitch(dto: VerifyDeviceSwitchDto) {
   const hashedToken = crypto.createHash('sha256').update(dto.token).digest('hex');
   const user = await this.userService.findByDeviceSwitchToken(hashedToken);
@@ -251,4 +256,68 @@ async verifyDeviceSwitch(dto: VerifyDeviceSwitchDto) {
     message: 'New device locked successfully. You can now login.',
   };
 }
+async createTenant(dto: CreateTenantDto){
+
+  const existingTenant = await this.tenantModel.findOne({
+    $or: [{name: dto.name}, {code: dto.code.toLowerCase()}]}
+  );
+
+  if(existingTenant){
+    throw new ConflictException('Tenant with this name or code already exists');
+  }
+
+  const tenant = await this.tenantModel.create({
+    ...dto,
+    code: dto.code.toLowerCase(),
+  })
+
+  return {
+    success : true,
+    message : 'Department onboarded successfully',
+    data : tenant
+  }
+}
+
+async getAllTenantsHealth() {
+    const tenants = await this.tenantModel.find().lean();
+
+    const formattedTenants = tenants.map((tenant) => ({
+      id: tenant._id,
+      name: tenant.name,
+      code: tenant.code,
+      adminEmail: tenant.adminEmail,
+      plan: tenant.plan,
+      status: tenant.status,
+      health: {
+        totalStudents: tenant.totalStudents,
+        totalHardwareNodes: tenant.totalHardwareNodes,
+        systemStatus: tenant.status === 'ACTIVE' ? 'HEALTHY' : 'DEGRADED',
+      },
+      createdAt: (tenant as any).createdAt,
+    }));
+
+    return {
+      success: true,
+      count: formattedTenants.length,
+      data: formattedTenants,
+    };
+  }
+
+  async updateSubscriptionPlan(id: string, dto: UpdatePlanDto) {
+    const tenant = await this.tenantModel.findByIdAndUpdate(
+      id,
+      { plan: dto.plan },
+      { new: true },
+    );
+
+    if (!tenant) {
+      throw new NotFoundException('Tenant not found');
+    }
+
+    return {
+      success: true,
+      message: `Subscription plan updated to ${dto.plan}`,
+      data: tenant,
+    };
+  }
 }

@@ -1,10 +1,12 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Headers } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post, Headers, Param, Patch, Get } from '@nestjs/common';
 import { RegisterDto } from './DTO/register.dto';
 import { LoginDto } from './DTO/login.dto';
 import { ForgotPassDto } from './DTO/forgot-pass.dto';
 import { ResetPassDto } from './DTO/reset-pass.dto';
 import { RequestDeviceSwitchDto } from './DTO/request-device-switch.dto';
 import { VerifyDeviceSwitchDto } from './DTO/verify-device-swtich.dto';
+import { CreateTenantDto } from './DTO/tenant.dto';
+import { UpdatePlanDto } from './DTO/update-plan.dto';
 import { AuthService } from './auth.service';
 import { Res } from '@nestjs/common';
 import { type Response } from 'express';
@@ -87,6 +89,26 @@ async requestDeviceSwitch(@Body() dto: RequestDeviceSwitchDto) {
 @Post('device-switch/verify')
 async verifyDeviceSwitch(@Body() dto: VerifyDeviceSwitchDto) {
   return this.authService.verifyDeviceSwitch(dto);
+}
 
+@HttpCode(HttpStatus.CREATED)
+@Post('tenants')
+async createTenant(@Body() dto: CreateTenantDto) {
+  return this.authService.createTenant(dto);
+}
+
+@HttpCode(HttpStatus.OK)
+@Patch('tenants/:tenantId/plan')
+async updateTenantPlan(
+  @Param('tenantId') tenantId: string,
+  @Body() dto: UpdatePlanDto,
+) {
+  return this.authService.updateSubscriptionPlan(tenantId, dto);
+}
+
+@HttpCode(HttpStatus.OK)
+@Get('tenants')
+async getTenantsHealth(){
+  return this.authService.getAllTenantsHealth()
 }
 }
