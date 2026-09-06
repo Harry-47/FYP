@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { IsNotEmpty, IsString, MinLength, IsOptional } from 'class-validator';
 
 export class LoginDto {
   @IsString()
@@ -10,7 +10,11 @@ export class LoginDto {
   password: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   deviceUUID: string;
+
+  @IsString()
+  @IsNotEmpty({message: 'Push token is a must'})
+  pushToken:string
 
 }

@@ -3,20 +3,29 @@ import { InjectModel } from '@nestjs/mongoose';
 import { User, UserDocument} from './users.schema';
 import { Model } from 'mongoose';
 import { RegisterDto } from '../auth/DTO/register.dto';
+import { Types } from 'mongoose';
 
 @Injectable()
 export class UsersService {
   constructor(@InjectModel(User.name) private userModel:Model<UserDocument>){}
 
 
-  async findByRollnoOrEmail(identifier: string) {
-  return this.userModel.findOne({
-    $or: [
-      { rollNo: identifier.toUpperCase().trim() },
-      { email: identifier.toLowerCase().trim() },
-    ],
-  });
-}
+  async findByRollnoOrEmailOrId(identifier: string) {
+    const cleanIdentifier = identifier.trim();
+
+    const conditions: any[] = [
+      { rollNo: cleanIdentifier.toUpperCase() },
+      { email: cleanIdentifier.toLowerCase() },
+      { rollNo: { $regex: new RegExp(`^${cleanIdentifier}$`, 'i') } },
+    ];
+
+    // Agar valid 24-character hex ObjectId hai to _id mein bhi check karo
+    if (Types.ObjectId.isValid(cleanIdentifier)) {
+      conditions.push({ _id: new Types.ObjectId(cleanIdentifier) });
+    }
+
+    return this.userModel.findOne({ $or: conditions });
+  }
 
   async createUser(userData : Partial<User>): Promise<UserDocument>{
       const savedUserWithoutPassword = await this.userModel.create(userData)

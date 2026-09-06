@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { UsersModule } from '../users/users.module';
-import { JwtModule } from '@nestjs/jwt';
+import { JwtModule, JwtService } from '@nestjs/jwt';
 import { EmailModule } from '../email/email.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Tenant, TenantSchema } from './tenant.schema';
@@ -20,6 +20,7 @@ import { Tenant, TenantSchema } from './tenant.schema';
     EmailModule
   ],
   controllers: [AuthController],
-  providers: [AuthService]
+  providers: [AuthService, JwtService],
+  exports: [JwtService]
 })
 export class AuthModule {}

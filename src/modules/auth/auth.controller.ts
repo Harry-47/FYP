@@ -1,27 +1,33 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Headers, Param, Patch, Get } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post, Headers, Param, Patch, Get, Req } from '@nestjs/common';
 import { RegisterDto } from './DTO/register.dto';
 import { LoginDto } from './DTO/login.dto';
 import { ForgotPassDto } from './DTO/forgot-pass.dto';
 import { ResetPassDto } from './DTO/reset-pass.dto';
 import { RequestDeviceSwitchDto } from './DTO/request-device-switch.dto';
+import { ProvisionUserDto } from './DTO/provision-user.dto'
 import { VerifyDeviceSwitchDto } from './DTO/verify-device-swtich.dto';
 import { CreateTenantDto } from './DTO/tenant.dto';
 import { UpdatePlanDto } from './DTO/update-plan.dto';
 import { AuthService } from './auth.service';
 import { Res } from '@nestjs/common';
 import { type Response } from 'express';
+import { Public } from '../../decorators/public/public.decorator';
+import { Roles } from '../../decorators/roles/roles.decorator';
 
 @Controller('auth')
 export class AuthController {
 
   constructor(private readonly authService: AuthService){}
+  
 
+  @Public()
   @Post("/register")
   @HttpCode(HttpStatus.CREATED)
   async registerUser(@Body() userData:RegisterDto){
       return this.authService.register(userData)
   }
 
+  @Public()
   @Post("/login")
   @HttpCode(HttpStatus.OK)
     async loginUser(@Body() dto: LoginDto,
@@ -42,20 +48,20 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @Post('logout')
-  async logout(@Headers('authorization') authHeader: string) {
-    const token = authHeader?.replace('Bearer ', '');
-    return this.authService.logout(token);
-  }
+  async logout(@Req() req: any) {
 
+    const userId = req.user.sub || req.user.userId || req.user._id;
+    return this.authService.logout(userId);
+  }
+  @Public()
   @HttpCode(HttpStatus.OK)
   @Post('refresh-token')
   async refreshTokens(
-    @Headers('authorization') authHeader: string,
     @Headers('x-refresh-token') customRefreshHeader: string,
     @Res({ passthrough: true }) res: Response,
   ) {
-    // Agar Bearer token bheja hai ya x-refresh-token header
-    const token = customRefreshHeader || authHeader?.replace('Bearer ', '');
+    //x-refresh-token header
+    const token = customRefreshHeader
     const tokens = await this.authService.rotateTokens(token);
 
     // Naye tokens response headers mein set karo
@@ -68,23 +74,26 @@ export class AuthController {
     };
   }
 
+
+  @Public()
   @Post("/forgot-pass")
   @HttpCode(HttpStatus.OK)
     async forgotPassword(@Body() dto: ForgotPassDto){
        return this.authService.handleForgotPassword(dto.email)
     }
-
+   @Public()
   @Post("/reset-pass")
     async handleResetPassword(@Body() dto:ResetPassDto){
       return this.authService.resetPassword(dto)
     }
-
+  
+  @Roles('admin', 'super-admin')
   @HttpCode(HttpStatus.OK)
-@Post('device-switch/request')
-async requestDeviceSwitch(@Body() dto: RequestDeviceSwitchDto) {
-  return this.authService.requestDeviceSwitch(dto);
-}
-
+  @Post('device-switch/request')
+  async requestDeviceSwitch(@Body() dto: RequestDeviceSwitchDto) {
+    return this.authService.requestDeviceSwitch(dto);
+  }
+@Public()
 @HttpCode(HttpStatus.OK)
 @Post('device-switch/verify')
 async verifyDeviceSwitch(@Body() dto: VerifyDeviceSwitchDto) {
@@ -110,5 +119,20 @@ async updateTenantPlan(
 @Get('tenants')
 async getTenantsHealth(){
   return this.authService.getAllTenantsHealth()
+}
+
+@Post('provision-user')
+@Roles('super-admin', 'admin')
+@HttpCode(HttpStatus.CREATED)
+async provisionUser(@Req() req:any ,@Body() dto: ProvisionUserDto) {
+  return this.authService.provisionUser(req.user, dto);
+}
+
+
+@Public()
+@Get('departments/active')
+@HttpCode(HttpStatus.OK)
+async getActiveDepartments() {
+  return this.authService.getActiveDepartments();
 }
 }

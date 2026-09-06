@@ -23,12 +23,12 @@ export class RegisterDto {
   password: string;
 
   @IsString()
-  @IsOptional()
+  @IsNotEmpty()
   tenantId?: string;
 
   @IsString()
-  @IsNotEmpty({ message: 'Department is required' })
-  department: string;
+  @IsNotEmpty({ message: 'University is required' })
+  university: string;
 
   @IsString()
   @IsNotEmpty({ message: 'Program is required' })
@@ -45,4 +45,8 @@ export class RegisterDto {
   @IsString()
   @IsNotEmpty({ message: 'Section is required' })
   section: string;
+
+  @IsString()
+  @IsNotEmpty({message: 'Push token is a must'})
+  pushToken:string
 }

@@ -16,4 +16,8 @@ export class CreateTenantDto {
   @IsOptional()
   @IsEnum(SubscriptionPlan, { message: 'Plan must be FREE, BASIC, PREMIUM, or ENTERPRISE' })
   plan?: SubscriptionPlan;
+
+  @IsString()
+@IsNotEmpty()
+university: string;
 }

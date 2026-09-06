@@ -21,8 +21,11 @@ export class Tenant {
   @Prop({ type: String, required: true, unique: true, trim: true })
   name: string;
 
+  @Prop({ required: true, trim: true })
+university: string; // e.g. "University of Sargodha"
+
   @Prop({ type: String, required: true, unique: true, lowercase: true, trim: true })
-  code: string; // e.g. "cs-dept", "se-dept"
+  code: string; // e.g. "cs-uos", "se-uos"
 
   @Prop({ type: String, required: true })
   adminEmail: string;

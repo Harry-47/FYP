@@ -7,6 +7,9 @@ import { EmailModule } from './modules/email/email.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './guards/jwt-auth/jwt-auth.guard';
 import { RolesGuard } from './guards/roles/roles.guard';
+import { DevicesModule } from './modules/devices/devices.module';
+import { AttendanceModule } from './modules/attendance/attendance.module';
+import { AttendaceService } from './modules/attendace/attendace.service';
 
 @Module({
   imports: [
@@ -24,6 +27,8 @@ import { RolesGuard } from './guards/roles/roles.guard';
     UsersModule,
     AuthModule,
     EmailModule,
+    DevicesModule,
+    AttendanceModule,
   ],
   providers: [
     {
@@ -36,6 +41,7 @@ import { RolesGuard } from './guards/roles/roles.guard';
       provide: APP_GUARD,
       useClass: RolesGuard,
     },
+      AttendaceService,
   ]
 })
 export class AppModule {}
